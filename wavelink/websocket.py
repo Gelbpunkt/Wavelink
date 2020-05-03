@@ -25,9 +25,8 @@ import json
 import logging
 import sys
 import traceback
-import websockets
 from discord.ext import commands
-from typing import Union
+from typing import Union, Dict, Any
 
 from .backoff import ExponentialBackoff
 from .events import *
@@ -63,7 +62,7 @@ class WebSocket:
 
     @property
     def is_connected(self) -> bool:
-        return self._websocket is not None and self._websocket.open
+        return self._websocket is not None and not self._websocket.closed
 
     async def _connect(self):
         await self.bot.wait_until_ready()
@@ -75,7 +74,7 @@ class WebSocket:
                 uri = f'ws://{self.host}:{self.port}'
 
             if not self.is_connected:
-                self._websocket = await websockets.connect(uri=uri, extra_headers=self.headers)
+                self._websocket = await aiohttp.ws_connect(uri, headers=self.headers)
 
         except Exception as error:
             self._last_exc = error
@@ -100,10 +99,9 @@ class WebSocket:
         backoff = ExponentialBackoff(base=7)
 
         while True:
-            try:
-                data = await self._websocket.recv()
-                __log__.debug(f'WEBSOCKET | Received Payload:: <{data}>')
-            except websockets.ConnectionClosed as e:
+            data = await self._websocket.receive_json()
+
+            if data.msg.type is aiohttp.WSMsgType.CLOSED:
                 self._last_exc = e
 
                 if e.code == 4001:
@@ -119,11 +117,10 @@ class WebSocket:
                 if not self.is_connected:
                     self.bot.loop.create_task(self._connect())
             else:
+                __log__.debug(f'WEBSOCKET | Received Payload:: <{data}>')
                 self.bot.loop.create_task(self.process_data(data))
 
-    async def process_data(self, data: str):
-        data = json.loads(data)
-
+    async def process_data(self, data: Dict[str, Any]):
         op = data.get('op', None)
         if not op:
             return
@@ -154,9 +151,9 @@ class WebSocket:
 
     def _get_event(self, name: str, data) -> Union[TrackEnd, TrackStart, TrackException, TrackStuck, WebsocketClosed]:
         if name == 'TrackEndEvent':
-            return TrackEnd(data['player'], data.get('track', None), data.get('reason', None))
+            return TrackEnd(data['player'], data.get('track'), data.get('reason'))
         elif name == 'TrackStartEvent':
-            return TrackStart(data['player'], data.get('track', None))
+            return TrackStart(data['player'], data.get('track'))
         elif name == 'TrackExceptionEvent':
             return TrackException(data['player'], data['track'], data['error'])
         elif name == 'TrackStuckEvent':
@@ -167,4 +164,4 @@ class WebSocket:
     async def _send(self, **data):
         if self.is_connected:
             __log__.debug(f'WEBSOCKET | Sending Payload:: {data}')
-            await self._websocket.send(json.dumps(data))
+            await self._websocket.send_json(data)
