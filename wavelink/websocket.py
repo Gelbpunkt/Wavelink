@@ -59,7 +59,7 @@ class WebSocket:
     @property
     def headers(self):
         return {'Authorization': self.password,
-                'Num-Shards': self.shard_count,
+                'Num-Shards': str(self.shard_count),
                 'User-Id': str(self.user_id)}
 
     @property
