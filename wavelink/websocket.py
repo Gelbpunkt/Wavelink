@@ -78,6 +78,7 @@ class WebSocket:
                 self._websocket = await self._node.session.ws_connect(uri, headers=self.headers)
 
         except Exception as error:
+            # 401 Error on Authentication Failure
             self._last_exc = error
             self._node.available = False
 
@@ -105,9 +106,6 @@ class WebSocket:
             if msg.type is aiohttp.WSMsgType.CLOSED:
                 __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
 
-                if False:  # TODO: Debug msg.extra for the data in case of auth failure
-                    print(f'\nAuthorization Failed for Node:: {self._node}\n', file=sys.stderr)
-                    break
 
                 self._closed = True
                 retry = backoff.delay()
