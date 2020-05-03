@@ -75,7 +75,7 @@ class WebSocket:
                 uri = f'ws://{self.host}:{self.port}'
 
             if not self.is_connected:
-                self._websocket = await self.node.session.ws_connect(uri, headers=self.headers)
+                self._websocket = await self._node.session.ws_connect(uri, headers=self.headers)
 
         except Exception as error:
             self._last_exc = error
