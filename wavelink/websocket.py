@@ -117,7 +117,7 @@ class WebSocket:
                     self.bot.loop.create_task(self._connect())
             else:
                 __log__.debug(f'WEBSOCKET | Received Payload:: <{msg.data}>')
-                self.bot.loop.create_task(self.process_data(data.json()))
+                self.bot.loop.create_task(self.process_data(msg.json()))
 
     async def process_data(self, data: Dict[str, Any]):
         op = data.get('op', None)
