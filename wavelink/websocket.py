@@ -100,12 +100,12 @@ class WebSocket:
         backoff = ExponentialBackoff(base=7)
 
         while True:
-            data = await self._websocket.receive_json()
+            msg = await self._websocket.receive()
 
-            if data.msg.type is aiohttp.WSMsgType.CLOSED:
-                self._last_exc = e
+            if msg.type is aiohttp.WSMsgType.CLOSED:
+                __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
 
-                if e.code == 4001:
+                if False:  # TODO: Debug msg.extra for the data in case of auth failure
                     print(f'\nAuthorization Failed for Node:: {self._node}\n', file=sys.stderr)
                     break
 
@@ -119,7 +119,7 @@ class WebSocket:
                     self.bot.loop.create_task(self._connect())
             else:
                 __log__.debug(f'WEBSOCKET | Received Payload:: <{data}>')
-                self.bot.loop.create_task(self.process_data(data))
+                self.bot.loop.create_task(self.process_data(data.json()))
 
     async def process_data(self, data: Dict[str, Any]):
         op = data.get('op', None)
