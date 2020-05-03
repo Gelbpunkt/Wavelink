@@ -78,12 +78,14 @@ class WebSocket:
                 self._websocket = await self._node.session.ws_connect(uri, headers=self.headers)
 
         except Exception as error:
-            # 401 Error on Authentication Failure
             self._last_exc = error
             self._node.available = False
 
-            __log__.error(f'WEBSOCKET | Connection Failure:: {error}')
-            traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
+            if isinstance(error, aiohttp.WSServerHandshakeError) and error.status == 401:
+                print(f'\nAuthorization Failed for Node:: {self._node}\n', file=sys.stderr)
+            else:
+                __log__.error(f'WEBSOCKET | Connection Failure:: {error}')
+                traceback.print_exception(type(error), error, error.__traceback__, file=sys.stderr)
             return
 
         if not self._task:
