@@ -49,7 +49,6 @@ class WebSocket:
         self.user_id = user_id
         self.secure = secure
 
-        self._session = None
         self._websocket = None
         self._last_exc = None
         self._task = None
@@ -76,8 +75,7 @@ class WebSocket:
                 uri = f'ws://{self.host}:{self.port}'
 
             if not self.is_connected:
-                self._session = aiohttp.ClientSession()
-                self._websocket = await self._session.ws_connect(uri, headers=self.headers)
+                self._websocket = await self.node.session.ws_connect(uri, headers=self.headers)
 
         except Exception as error:
             self._last_exc = error
