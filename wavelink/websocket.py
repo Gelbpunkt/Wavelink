@@ -27,7 +27,7 @@ import logging
 import sys
 import traceback
 from discord.ext import commands
-from typing import Union, Dict, Any
+from typing import Any, Dict, Union
 
 from .backoff import ExponentialBackoff
 from .events import *
