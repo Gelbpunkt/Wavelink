@@ -98,6 +98,7 @@ class WebSocket:
         if self.is_connected:
             print(f'\nWAVELINK:WEBSOCKET | Connection established::{self._node.__repr__()}\n')
             __log__.debug('WEBSOCKET | Connection established...%s', self._node.__repr__())
+            self.bot.loop.create_task(self._node.on_event(NodeConnected(node=self._node)))
 
     async def _listen(self):
         backoff = ExponentialBackoff(base=7)
@@ -109,7 +110,12 @@ class WebSocket:
                 __log__.debug(f'WEBSOCKET | Close data: {msg.extra}')
 
 
-                self._closed = True
+                if not self._closed:
+                    self._closed = True
+                    self.bot.loop.create_task(self._node.on_event(NodeDisconnected(node=self._node,
+                                                                                   reason=e.reason,
+                                                                                   code=e.code)))
+
                 retry = backoff.delay()
 
                 __log__.warning(f'\nWEBSOCKET | Connection closed:: Retrying connection in <{retry}> seconds\n')
