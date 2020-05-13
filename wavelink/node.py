@@ -20,6 +20,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
+import asyncio
 import inspect
 import logging
 from discord.ext import commands
@@ -127,29 +128,35 @@ class Node:
             A list of or TrackPlaylist instance of :class:`wavelink.player.Track` objects.
             This could be None if no tracks were found.
         """
-        async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
-                                    headers={'Authorization': self.password}) as resp:
-            data = await resp.json()
-            
+        retries = 5
+
+        while retries > 0:
+            async with self.session.get(f'{self.rest_uri}/loadtracks?identifier={quote(query)}',
+                                        headers={'Authorization': self.password}) as resp:
+                data = await resp.json()
+
             if not resp.status == 200:
                 __log__.warning(f'REST | Failed to get tracks with query:: <{query}>. Status: {data["status"]}, '
                                 f'Error: {data["error"]}.')
-                return None
+                retries -= 1
+            else:
+                break
+            await asyncio.sleep(0.1)
 
-            if not data['tracks']:
-                __log__.info(f'REST | No tracks with query:: <{query}> found.')
-                return None
+        if retries == 0 or not data['tracks']:
+            __log__.info(f'REST | No tracks with query:: <{query}> found.')
+            return None
 
-            if data['playlistInfo']:
-                return TrackPlaylist(data=data)
+        if data['playlistInfo']:
+            return TrackPlaylist(data=data)
 
-            tracks = []
-            for track in data['tracks']:
-                tracks.append(Track(id_=track['track'], info=track['info']))
+        tracks = []
+        for track in data['tracks']:
+            tracks.append(Track(id_=track['track'], info=track['info']))
 
-            __log__.debug(f'REST | Found <{len(tracks)}> tracks with query:: <{query}> ({self.__repr__()})')
+        __log__.debug(f'REST | Found <{len(tracks)}> tracks with query:: <{query}> ({self.__repr__()})')
 
-            return tracks
+        return tracks
 
     async def build_track(self, identifier: str) -> Track:
         """|coro|
