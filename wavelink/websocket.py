@@ -22,6 +22,7 @@ SOFTWARE.
 """
 import aiohttp
 import asyncio
+import json
 import logging
 import sys
 import traceback
@@ -170,4 +171,4 @@ class WebSocket:
     async def _send(self, **data):
         if self.is_connected:
             __log__.debug(f'WEBSOCKET | Sending Payload:: {data}')
-            await self._websocket.send_json(data)
+            await self._websocket.send_str(json.dumps(data).decode("utf-8"))
