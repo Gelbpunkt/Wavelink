@@ -23,7 +23,8 @@ SOFTWARE.
 import asyncio
 import logging
 
-from typing import Any, Dict, List, Optional, Union
+from functools import partial
+from typing import Any, Callable, Dict, List, Optional, Union
 
 import aiohttp
 
@@ -39,11 +40,11 @@ __log__ = logging.getLogger(__name__)
 class Client:
     """The main WaveLink client."""
 
-    def __new__(cls, *args: str, **kwargs: str) -> Any:
+    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
         cls.__qualname__ = "wavelink.Client"
 
         try:
-            bot = kwargs["bot"]
+            bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]] = kwargs["bot"]
         except KeyError:
             msg = (
                 "wavelink.Client: bot is a required keyword only argument which is"
@@ -110,6 +111,41 @@ class Client:
             A dict of the current WaveLink players.
         """
         return self._get_players()
+
+    async def _dispatch_listeners(self, name: str, *args: Any, **kwargs: Any) -> None:
+        futures = []
+
+        for cog in self.bot.cogs.values():
+            listeners = getattr(cog, "__wavelink_listeners__")
+            if not listeners:
+                continue
+            try:
+                listeners = listeners[name]
+            except (AttributeError, KeyError):
+                continue
+
+            for listener in listeners:
+                method = getattr(cog, listener)
+                future = asyncio.ensure_future(method(*args, **kwargs))
+
+                callback = partial(self._future_callback, cog, method)
+                future.add_done_callback(callback)
+                futures.append(future)
+
+        if not futures:
+            return
+
+        await asyncio.gather(*futures, return_exceptions=True)
+
+    def _future_callback(
+        self,
+        cog: commands.Cog[Any],
+        listener: Callable[[Exception], Any],
+        fut: asyncio.Future[Any],
+    ) -> None:
+        handler = getattr(cog, "on_wavelink_error")
+        if fut.exception() and handler:
+            self.loop.create_task(handler(listener, fut.exception()))
 
     async def get_tracks(
         self, query: str
@@ -371,6 +407,7 @@ class Client:
         identifier: str,
         shard_id: Optional[int] = None,
         secure: bool = False,
+        heartbeat: Optional[float] = None,
     ) -> Node:
         """|coro|
 
@@ -394,6 +431,8 @@ class Client:
             An optional Shard ID to associate with the :class:`wavelink.node.Node`. Could be None.
         secure: bool
             Whether the websocket should be started with the secure wss protocol.
+        heartbeat: Optional[float]
+            Send ping message every heartbeat seconds and wait pong response, if pong response is not received then close connection.
 
         Returns
         ---------
@@ -427,9 +466,9 @@ class Client:
             session=self.session,
             client=self,
             secure=secure,
+            heartbeat=heartbeat,
         )
-
-        await node.connect(bot=self.bot)
+        await node.connect()
 
         node.available = True
         self.nodes[identifier] = node

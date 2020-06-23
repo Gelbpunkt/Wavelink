@@ -25,11 +25,9 @@ import logging
 import sys
 import traceback
 
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Tuple, Union
 
 import aiohttp
-
-from discord.ext import commands
 
 from .backoff import ExponentialBackoff
 from .events import *
@@ -40,30 +38,20 @@ __log__ = logging.getLogger(__name__)
 
 
 class WebSocket:
-    def __init__(
-        self,
-        bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]],
-        node: Node,
-        host: str,
-        port: int,
-        password: str,
-        shard_count: int,
-        user_id: int,
-        secure: bool,
-    ):
-        self.bot = bot
-        self.host = host
-        self.port = port
-        self.password = password
-        self.shard_count = shard_count
-        self.user_id = user_id
-        self.secure = secure
+    def __init__(self, **attrs: Any) -> None:
+        self._node: Node = attrs["node"]
+        self.client = self._node._client
+        self.bot = self.client.bot
+        self.host = attrs.get("host")
+        self.port = attrs.get("port")
+        self.password: str = attrs["password"]
+        self.shard_count = attrs.get("shard_count")
+        self.user_id = attrs.get("user_id")
+        self.secure = attrs.get("secure")
 
         self._websocket: Optional[aiohttp.ClientWebSocketResponse] = None
         self._last_exc: Optional[Exception] = None
         self._task: Optional[asyncio.Task[None]] = None
-
-        self._node = node
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -88,7 +76,7 @@ class WebSocket:
 
             if not self.is_connected:
                 self._websocket = await self._node.session.ws_connect(
-                    uri, headers=self.headers
+                    uri, headers=self.headers, heartbeat=self._node.heartbeat
                 )
 
         except Exception as error:
@@ -117,10 +105,11 @@ class WebSocket:
         self._node.available = True
 
         if self.is_connected:
-            print(
-                "\nWAVELINK:WEBSOCKET | Connection"
-                f" established::{self._node.__repr__()}\n"
+            __log__.debug(
+                "WEBSOCKET | Connection established...%s", self._node.__repr__()
             )
+
+            await self.client._dispatch_listeners("on_node_ready", self._node)
             __log__.debug(
                 "WEBSOCKET | Connection established...%s", self._node.__repr__()
             )
@@ -164,14 +153,18 @@ class WebSocket:
             except KeyError:
                 return
 
-            event = self._get_event(data["type"], data)
+            listener, payload = self._get_event_payload(data["type"], data)
 
             __log__.debug(f"WEBSOCKET | op: event:: {data}")
 
+            # Dispatch node event/player hooks
             try:
-                await self._node.on_event(event)
+                await self._node.on_event(payload)
             except Exception as e:
                 traceback.print_exception(type(e), e, e.__traceback__, file=sys.stderr)
+
+            # Dispatch listeners
+            await self.client._dispatch_listeners(listener, self._node, payload)
 
         elif op == "playerUpdate":
             __log__.debug(f"WEBSOCKET | op: playerUpdate:: {data}")
@@ -180,25 +173,23 @@ class WebSocket:
             except KeyError:
                 pass
 
-    def _get_event(
+    def _get_event_payload(
         self, name: str, data: Dict[str, Any]
-    ) -> Union[WavelinkEvent, WebsocketClosed]:
+    ) -> Tuple[
+        str, Union[TrackEnd, TrackStart, TrackException, TrackStuck, WebsocketClosed]
+    ]:
         if name == "TrackEndEvent":
-            return TrackEnd(
-                data["player"], data.get("track", None), data.get("reason", None)
-            )
+            return "on_track_end", TrackEnd(data)
         elif name == "TrackStartEvent":
-            return TrackStart(data["player"], data.get("track", None))
+            return "on_track_start", TrackStart(data)
         elif name == "TrackExceptionEvent":
-            return TrackException(data["player"], data["track"], data["error"])
+            return "on_track_exception", TrackException(data)
         elif name == "TrackStuckEvent":
-            return TrackStuck(data["player"], data["track"], int(data["thresholdMs"]))
+            return "on_track_stuck", TrackStuck(data)
         else:
-            return WebsocketClosed(
-                data["player"], data["reason"], data["code"], data["guildId"]
-            )
+            return "on_websocket_closed", WebsocketClosed(data)
 
-    async def _send(self, **data: Any) -> None:
+    async def _send(self, **data: Dict[str, Any]) -> None:
         if self.is_connected and self._websocket:
             __log__.debug(f"WEBSOCKET | Sending Payload:: {data}")
             await self._websocket.send_json(data)

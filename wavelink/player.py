@@ -178,14 +178,18 @@ class Player:
         self.volume = 100
         self.paused = False
         self.current: Optional[Track] = None
+        self._equalizer = Equalizer.flat()
         self.channel_id: Optional[int] = None
 
-        self.equalizers = {
-            "FLAT": Equalizer.flat(),
-            "BOOST": Equalizer.boost(),
-            "METAL": Equalizer.metal(),
-            "PIANO": Equalizer.piano(),
-        }
+    @property
+    def equalizer(self) -> Equalizer:
+        """The currently applied Equalizer."""
+        return self._equalizer
+
+    @property
+    def eq(self) -> Equalizer:
+        """Alias to :func:`equalizer`."""
+        return self.equalizer
 
     @property
     def is_connected(self) -> bool:
@@ -260,13 +264,15 @@ class Player:
                 op="voiceUpdate", guildId=str(self.guild_id), **self._voice_state
             )
 
-    async def hook(self, event: Union[WavelinkEvent, WebsocketClosed]) -> None:
+    async def hook(
+        self, event: Union[TrackEnd, TrackException, TrackStuck, WebsocketClosed]
+    ) -> None:
         if isinstance(event, (TrackEnd, TrackException, TrackStuck)):
             self.current = None
 
     def _get_shard_socket(self, shard_id: int) -> Optional[DiscordWebSocket]:
         if isinstance(self.bot, commands.AutoShardedBot):
-            return self.bot.shards[shard_id].ws  # type:ignore
+            return self.bot.shards[shard_id].ws  # type: ignore
             # not part of the discord.py public API, see #1497
 
         if self.bot.shard_id is None or self.bot.shard_id == shard_id:
@@ -404,6 +410,7 @@ class Player:
         await self.node._send(
             op="equalizer", guildId=str(self.guild_id), bands=equalizer.eq
         )
+        self._equalizer = equalizer
 
     async def set_equalizer(self, equalizer: Equalizer) -> None:
         """|coro|

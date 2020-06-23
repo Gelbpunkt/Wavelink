@@ -22,41 +22,12 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import Any, Dict
 
-if TYPE_CHECKING:
-    from .player import Player, Track
-
-
-__all__ = (
-    "WavelinkEvent",
-    "TrackEnd",
-    "TrackException",
-    "TrackStuck",
-    "TrackStart",
-    "WebsocketClosed",
-)
+__all__ = ("TrackEnd", "TrackException", "TrackStuck", "TrackStart", "WebsocketClosed")
 
 
-class WavelinkEvent:
-    """Base Wavelink event class. Most events derive from this class.
-
-    Attributes
-    ------------
-    player: :class:`wavelink.player.Player`
-        The player associated with the event.
-    track: :class:`wavelink.player.Track`
-        The track associated with the event.
-    """
-
-    __slots__ = ("player", "track")
-
-    def __init__(self, player: Player, track: Track):
-        self.player = player
-        self.track = track
-
-
-class TrackEnd(WavelinkEvent):
+class TrackEnd:
     """Event dispatched on TrackEnd.
 
     Attributes
@@ -69,17 +40,18 @@ class TrackEnd(WavelinkEvent):
         The reason the TrackEnd event was dispatched.
     """
 
-    __slots__ = ("reason",)
+    __slots__ = ("track", "player", "reason")
 
-    def __init__(self, player: Player, track: Track, reason: str):
-        super().__init__(player, track)
-        self.reason = reason
+    def __init__(self, data: Dict[str, Any]):
+        self.track = data.get("track")
+        self.player = data.get("player")
+        self.reason = data.get("reason")
 
     def __str__(self) -> str:
-        return "TrackEnd"
+        return "TrackEndEvent"
 
 
-class TrackException(WavelinkEvent):
+class TrackException:
     """Event dispatched on TrackException.
 
     Attributes
@@ -92,17 +64,18 @@ class TrackException(WavelinkEvent):
         The error reason dispatched with the event.
     """
 
-    __slots__ = ("error",)
+    __slots__ = ("track", "player", "error")
 
-    def __init__(self, player: Player, track: Track, error: str):
-        super().__init__(player, track)
-        self.error = error
+    def __init__(self, data: Dict[str, Any]):
+        self.track = data.get("track")
+        self.player = data.get("player")
+        self.error = data.get("error")
 
     def __str__(self) -> str:
-        return "TrackException"
+        return "TrackExceptionEvent"
 
 
-class TrackStuck(WavelinkEvent):
+class TrackStuck:
     """Event dispatched on TrackStuck.
 
     Attributes
@@ -115,17 +88,19 @@ class TrackStuck(WavelinkEvent):
         The threshold associated with the event.
     """
 
-    __slots__ = ("threshold",)
+    __slots__ = ("track", "player", "threshold")
 
-    def __init__(self, player: Player, track: Track, threshold: int):
-        super().__init__(player, track)
-        self.threshold = threshold
+    def __init__(self, data: Dict[str, Any]) -> None:
+        self.track = data.get("track")
+        self.player = data.get("player")
+        threshold: str = data.get("thresholdMs", 0)
+        self.threshold = int(threshold)
 
     def __str__(self) -> str:
-        return "TrackStuck"
+        return "TrackStuckEvent"
 
 
-class TrackStart(WavelinkEvent):
+class TrackStart:
     """Event dispatched on TrackStart.
 
     Attributes
@@ -136,13 +111,14 @@ class TrackStart(WavelinkEvent):
         The track associated with the event.
     """
 
-    __slots__ = ()
+    __slots__ = ("track", "player")
 
-    def __init__(self, player: Player, track: Track):
-        super().__init__(player, track)
+    def __init__(self, data: Dict[str, Any]) -> None:
+        self.track = data.get("track")
+        self.player = data.get("player")
 
     def __str__(self) -> str:
-        return "TrackStart"
+        return "TrackStartEvent"
 
 
 class WebsocketClosed:
@@ -160,11 +136,13 @@ class WebsocketClosed:
         The guild ID associated with the disconnect.
     """
 
-    def __init__(self, player: Player, reason: str, code: int, guild_id: int):
-        self.player = player
-        self.reason = reason
-        self.code = code
-        self.guild_id = guild_id
+    __slots__ = ("player", "reason", "code", "guild_id")
+
+    def __init__(self, data: Dict[str, Any]) -> None:
+        self.player = data.get("player")
+        self.reason = data.get("reason")
+        self.code = data.get("code")
+        self.guild_id = data.get("guildID")
 
     def __str__(self) -> str:
-        return "WebsocketClosed"
+        return "WebsocketClosedEvent"

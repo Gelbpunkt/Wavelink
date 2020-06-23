@@ -24,11 +24,14 @@ from __future__ import annotations
 
 import collections
 
-from typing import DefaultDict, List, Tuple
+from typing import DefaultDict, Dict, List, Tuple, Union
 
 
 class Equalizer:
     """Class representing a usuable equalizer.
+
+    .. warning::
+        You can only create Equalizers through the provided class methods.
 
     Attributes
     ------------
@@ -39,24 +42,31 @@ class Equalizer:
     """
 
     def __init__(self, levels: List[Tuple[int, float]]):
+        self.raw = levels
+        self.eq = self._factory(levels)
+
+    @staticmethod
+    def _factory(levels: List[Tuple[int, float]]) -> List[Dict[str, Union[int, float]]]:
         _band_dict: DefaultDict[int, float] = collections.defaultdict(int)
 
         _band_dict.update(levels)
         _dict = [{"band": i, "gain": _band_dict[i]} for i in range(15)]
 
-        self.eq = _dict
-        self.raw = levels
+        return _dict
 
     @classmethod
     def build(cls, *, levels: List[Tuple[int, float]]) -> Equalizer:
-        """Build an Equalizer class with the provided levels.
+        """Build a custom Equalizer class with the provided levels.
 
         Parameters
         ------------
         levels: List[Tuple[int, float]]
             A list of tuple pairs containing a band int and gain float.
         """
-        return cls(levels)
+        self = cls(levels)
+
+        self.__str__ = lambda _: "CustomEqualizer"  # type: ignore
+        return self
 
     @classmethod
     def flat(cls) -> Equalizer:
@@ -64,25 +74,27 @@ class Equalizer:
 
         Resets your EQ to Flat.
         """
-        return cls(
-            [
-                (0, 0.0),
-                (1, 0.0),
-                (2, 0.0),
-                (3, 0.0),
-                (4, 0.0),
-                (5, 0.0),
-                (6, 0.0),
-                (7, 0.0),
-                (8, 0.0),
-                (9, 0.0),
-                (10, 0.0),
-                (11, 0.0),
-                (12, 0.0),
-                (13, 0.0),
-                (14, 0.0),
-            ]
-        )
+        levels = [
+            (0, 0.0),
+            (1, 0.0),
+            (2, 0.0),
+            (3, 0.0),
+            (4, 0.0),
+            (5, 0.0),
+            (6, 0.0),
+            (7, 0.0),
+            (8, 0.0),
+            (9, 0.0),
+            (10, 0.0),
+            (11, 0.0),
+            (12, 0.0),
+            (13, 0.0),
+            (14, 0.0),
+        ]
+        self = cls(levels)
+
+        cls.__str__ = lambda _: "Flat"  # type: ignore
+        return self
 
     @classmethod
     def boost(cls) -> Equalizer:
@@ -91,25 +103,28 @@ class Equalizer:
         This equalizer emphasizes Punchy Bass and Crisp Mid-High tones.
         Not suitable for tracks with Deep/Low Bass.
         """
-        return cls(
-            [
-                (0, -0.075),
-                (1, 0.125),
-                (2, 0.125),
-                (3, 0.1),
-                (4, 0.1),
-                (5, 0.05),
-                (6, 0.075),
-                (7, 0.0),
-                (8, 0.0),
-                (9, 0.0),
-                (10, 0.0),
-                (11, 0.0),
-                (12, 0.125),
-                (13, 0.15),
-                (14, 0.05),
-            ]
-        )
+        levels = [
+            (0, -0.075),
+            (1, 0.125),
+            (2, 0.125),
+            (3, 0.1),
+            (4, 0.1),
+            (5, 0.05),
+            (6, 0.075),
+            (7, 0.0),
+            (8, 0.0),
+            (9, 0.0),
+            (10, 0.0),
+            (11, 0.0),
+            (12, 0.125),
+            (13, 0.15),
+            (14, 0.05),
+        ]
+
+        self = cls(levels)
+
+        cls.__str__ = lambda _: "Boost"  # type: ignore
+        return self
 
     @classmethod
     def metal(cls) -> Equalizer:
@@ -117,25 +132,28 @@ class Equalizer:
 
         Expect clipping on Bassy songs.
         """
-        return cls(
-            [
-                (0, 0.0),
-                (1, 0.1),
-                (2, 0.1),
-                (3, 0.15),
-                (4, 0.13),
-                (5, 0.1),
-                (6, 0.0),
-                (7, 0.125),
-                (8, 0.175),
-                (9, 0.175),
-                (10, 0.125),
-                (11, 0.125),
-                (12, 0.1),
-                (13, 0.075),
-                (14, 0.0),
-            ]
-        )
+        levels = [
+            (0, 0.0),
+            (1, 0.1),
+            (2, 0.1),
+            (3, 0.15),
+            (4, 0.13),
+            (5, 0.1),
+            (6, 0.0),
+            (7, 0.125),
+            (8, 0.175),
+            (9, 0.175),
+            (10, 0.125),
+            (11, 0.125),
+            (12, 0.1),
+            (13, 0.075),
+            (14, 0.0),
+        ]
+
+        self = cls(levels)
+
+        cls.__str__ = lambda _: "Metal"  # type: ignore
+        return self
 
     @classmethod
     def piano(cls) -> Equalizer:
@@ -144,21 +162,24 @@ class Equalizer:
         Suitable for Piano tracks, or tacks with an emphasis on Female Vocals.
         Could also be used as a Bass Cutoff.
         """
-        return cls(
-            [
-                (0, -0.25),
-                (1, -0.25),
-                (2, -0.125),
-                (3, 0.0),
-                (4, 0.25),
-                (5, 0.25),
-                (6, 0.0),
-                (7, -0.25),
-                (8, -0.25),
-                (9, 0.0),
-                (10, 0.0),
-                (11, 0.5),
-                (12, 0.25),
-                (13, -0.025),
-            ]
-        )
+        levels = [
+            (0, -0.25),
+            (1, -0.25),
+            (2, -0.125),
+            (3, 0.0),
+            (4, 0.25),
+            (5, 0.25),
+            (6, 0.0),
+            (7, -0.25),
+            (8, -0.25),
+            (9, 0.0),
+            (10, 0.0),
+            (11, 0.5),
+            (12, 0.25),
+            (13, -0.025),
+        ]
+
+        self = cls(levels)
+
+        cls.__str__ = lambda _: "Piano"  # type: ignore
+        return self

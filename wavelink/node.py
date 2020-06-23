@@ -28,11 +28,9 @@ from urllib.parse import quote
 
 import aiohttp
 
-from discord.ext import commands
-
 from .client import Client
 from .errors import *
-from .events import WavelinkEvent, WebsocketClosed
+from .events import TrackEnd, TrackException, TrackStart, TrackStuck, WebsocketClosed
 from .player import Player, Track, TrackPlaylist
 from .stats import Stats
 from .websocket import WebSocket
@@ -75,6 +73,7 @@ class Node:
         identifier: str,
         shard_id: Optional[int] = None,
         secure: bool = False,
+        heartbeat: Optional[float] = None,
     ):
         self.host = host
         self.port = port
@@ -85,6 +84,7 @@ class Node:
         self.region = region
         self.identifier = identifier
         self.secure = secure
+        self.heartbeat = heartbeat
 
         self.shard_id = shard_id
 
@@ -95,7 +95,18 @@ class Node:
         self._client = client
 
         self.hook: Optional[
-            Callable[[Union[WavelinkEvent, WebsocketClosed]], Any]
+            Callable[
+                [
+                    Union[
+                        TrackEnd,
+                        TrackStart,
+                        TrackStuck,
+                        TrackException,
+                        WebsocketClosed,
+                    ]
+                ],
+                Any,
+            ]
         ] = None
         self.available = True
 
@@ -128,18 +139,15 @@ class Node:
             return 9e30
         return self.stats.penalty.total
 
-    async def connect(
-        self, bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]]
-    ) -> None:
+    async def connect(self) -> None:
         self._websocket = WebSocket(
-            bot,
-            self,
-            self.host,
-            self.port,
-            self.password,
-            self.shards,
-            self.uid,
-            self.secure,
+            node=self,
+            host=self.host,
+            port=self.port,
+            password=self.password,
+            shard_count=self.shards,
+            user_id=self.uid,
+            secure=self.secure,
         )
         await self._websocket._connect()
 
@@ -235,10 +243,14 @@ class Node:
         """
         return self.players.get(guild_id, None)
 
-    async def on_event(self, event: Union[WavelinkEvent, WebsocketClosed]) -> None:
+    async def on_event(
+        self,
+        event: Union[TrackEnd, TrackStart, TrackStuck, TrackException, WebsocketClosed],
+    ) -> None:
         """Function which dispatches events when triggered on the Node."""
         __log__.info(f"NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})")
-        await event.player.hook(event)
+        if event.player:
+            await event.player.hook(event)
 
         if not self.hook:
             return
@@ -249,7 +261,11 @@ class Node:
             self.hook(event)
 
     def set_hook(
-        self, func: Callable[[Union[WavelinkEvent, WebsocketClosed]], Any]
+        self,
+        func: Callable[
+            [Union[TrackStart, TrackEnd, TrackStuck, TrackException, WebsocketClosed]],
+            Any,
+        ],
     ) -> None:
         """Set the Node Event Hook.
 
