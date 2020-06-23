@@ -27,7 +27,7 @@ from .node import Node
 
 
 class Penalty:
-    def __init__(self, stats: Stats) -> None:
+    def __init__(self, stats):
         self.player_penalty = stats.playing_players
         self.cpu_penalty = 1.05 ** (100 * stats.system_load) * 10 - 10
         self.null_frame_penalty = 0.0
@@ -53,26 +53,26 @@ class Penalty:
 
 
 class Stats:
-    def __init__(self, node: Node, data: Dict[str, Any]) -> None:
+    def __init__(self, node, data):
         self._node = node
 
-        self.uptime: int = data["uptime"]
+        self.uptime = data["uptime"]
 
-        self.players: int = data["players"]
-        self.playing_players: int = data["playingPlayers"]
+        self.players = data["players"]
+        self.playing_players = data["playingPlayers"]
 
-        memory: Dict[str, int] = data["memory"]
+        memory = data["memory"]
         self.memory_free = memory["free"]
         self.memory_used = memory["used"]
         self.memory_allocated = memory["allocated"]
         self.memory_reservable = memory["reservable"]
 
-        cpu: Dict[str, Union[int, float]] = data["cpu"]
-        self.cpu_cores: int = int(cpu["cores"])
-        self.system_load: float = cpu["systemLoad"]
-        self.lavalink_load: float = cpu["lavalinkLoad"]
+        cpu = data["cpu"]
+        self.cpu_cores = int(cpu["cores"])
+        self.system_load = cpu["systemLoad"]
+        self.lavalink_load = cpu["lavalinkLoad"]
 
-        frame_stats: Dict[str, int] = data.get("frameStats", {})
+        frame_stats = data.get("frameStats", {})
         self.frames_sent = frame_stats.get("sent", -1)
         self.frames_nulled = frame_stats.get("nulled", -1)
         self.frames_deficit = frame_stats.get("deficit", -1)

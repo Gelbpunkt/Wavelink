@@ -40,11 +40,11 @@ __log__ = logging.getLogger(__name__)
 class Client:
     """The main WaveLink client."""
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Any:
+    def __new__(cls, *args, **kwargs):
         cls.__qualname__ = "wavelink.Client"
 
         try:
-            bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]] = kwargs["bot"]
+            bot = kwargs["bot"]
         except KeyError:
             msg = (
                 "wavelink.Client: bot is a required keyword only argument which is"
@@ -70,17 +70,17 @@ class Client:
 
         return super().__new__(cls)
 
-    def __init__(self, bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]]):
+    def __init__(self, bot):
         self.bot = bot
         self.loop = bot.loop or asyncio.get_event_loop()
         self.session = aiohttp.ClientSession(loop=self.loop)
 
-        self.nodes: Dict[str, Node] = {}
+        self.nodes = {}
 
         bot.add_listener(self.update_handler, "on_socket_response")
 
     @property
-    def shard_count(self) -> int:
+    def shard_count(self):
         """Return the bots Shard Count as an int.
 
         Returns
@@ -91,7 +91,7 @@ class Client:
         return self.bot.shard_count or 1
 
     @property
-    def user_id(self) -> int:
+    def user_id(self):
         """Return the Bot users ID.
 
         Returns
@@ -102,7 +102,7 @@ class Client:
         return self.bot.user.id
 
     @property
-    def players(self) -> Dict[int, Player]:
+    def players(self):
         """Return the WaveLink clients current players across all nodes.
 
         Returns
@@ -112,7 +112,7 @@ class Client:
         """
         return self._get_players()
 
-    async def _dispatch_listeners(self, name: str, *args: Any, **kwargs: Any) -> None:
+    async def _dispatch_listeners(self, name, *args, **kwargs):
         futures = []
 
         for cog in self.bot.cogs.values():
@@ -138,18 +138,13 @@ class Client:
         await asyncio.gather(*futures, return_exceptions=True)
 
     def _future_callback(
-        self,
-        cog: commands.Cog[Any],
-        listener: Callable[[Exception], Any],
-        fut: asyncio.Future[Any],
-    ) -> None:
+        self, cog, listener, fut,
+    ):
         handler = getattr(cog, "on_wavelink_error")
         if fut.exception() and handler:
             self.loop.create_task(handler(listener, fut.exception()))
 
-    async def get_tracks(
-        self, query: str
-    ) -> Optional[Union[List[Track], TrackPlaylist]]:
+    async def get_tracks(self, query):
         """|coro|
 
         Search for and return a list of Tracks for the given query.
@@ -178,7 +173,7 @@ class Client:
 
         return await node.get_tracks(query)
 
-    async def build_track(self, identifier: str) -> Track:
+    async def build_track(self, identifier):
         """|coro|
 
         Build a track object with a valid track identifier.
@@ -207,15 +202,15 @@ class Client:
 
         return await node.build_track(identifier)
 
-    def _get_players(self) -> Dict[int, Player]:
-        players: List[Player] = []
+    def _get_players(self):
+        players = []
 
         for node in self.nodes.values():
             players.extend(node.players.values())
 
         return {player.guild_id: player for player in players}
 
-    def get_node(self, identifier: str) -> Optional[Node]:
+    def get_node(self, identifier):
         """Retrieve a Node with the given identifier.
 
         Parameters
@@ -230,7 +225,7 @@ class Client:
         """
         return self.nodes.get(identifier, None)
 
-    def get_best_node(self) -> Optional[Node]:
+    def get_best_node(self):
         """Return the best available :class:`wavelink.node.Node` across the :class:`.Client`.
 
         Returns
@@ -244,7 +239,7 @@ class Client:
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
-    def get_node_by_region(self, region: str) -> Optional[Node]:
+    def get_node_by_region(self, region):
         """Retrieve the best available Node with the given region.
 
         Parameters
@@ -268,7 +263,7 @@ class Client:
 
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
-    def get_node_by_shard(self, shard_id: int) -> Optional[Node]:
+    def get_node_by_shard(self, shard_id):
         """Retrieve the best available Node with the given shard ID.
 
         Parameters
@@ -291,13 +286,8 @@ class Client:
         return sorted(nodes, key=lambda n: len(n.players))[0]
 
     def get_player(
-        self,
-        guild_id: int,
-        *,
-        cls: Optional[type] = None,
-        node_id: Optional[str] = None,
-        **kwargs: str,
-    ) -> Player:
+        self, guild_id, *, cls=None, node_id=None, **kwargs,
+    ):
         """Retrieve a player for the given guild ID. If None, a player will be created and returned.
 
         .. versionchanged:: 0.3.0
@@ -398,17 +388,17 @@ class Client:
 
     async def initiate_node(
         self,
-        host: str,
-        port: int,
+        host,
+        port,
         *,
-        rest_uri: str,
-        password: str,
-        region: str,
-        identifier: str,
-        shard_id: Optional[int] = None,
-        secure: bool = False,
-        heartbeat: Optional[float] = None,
-    ) -> Node:
+        rest_uri,
+        password,
+        region,
+        identifier,
+        shard_id=None,
+        secure=False,
+        heartbeat=None,
+    ):
         """|coro|
 
         Initiate a Node and connect to the provided server.
@@ -476,7 +466,7 @@ class Client:
         __log__.info(f"CLIENT | New node initiated:: {node.__repr__()} ")
         return node
 
-    async def destroy_node(self, *, identifier: str) -> None:
+    async def destroy_node(self, *, identifier):
         """Destroy the node and it's players.
 
         Parameters
@@ -498,7 +488,7 @@ class Client:
 
         await node.destroy()
 
-    async def update_handler(self, data: Dict[str, Any]) -> None:
+    async def update_handler(self, data):
         if not data or "t" not in data:
             return
 

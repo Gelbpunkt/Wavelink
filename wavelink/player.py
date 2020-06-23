@@ -83,13 +83,13 @@ class Track:
         "thumb",
     )
 
-    def __init__(self, id_: str, info: Dict[str, Any], query: Optional[str] = None):
+    def __init__(self, id_, info, query=None):
         self.id = id_
         self.info = info
         self.query = query
 
         # Used in __str__, has to be a string, either .get("title", "") or force it
-        self.title: str = info["title"]
+        self.title = info["title"]
         self.identifier = info.get("identifier")
 
         if self.identifier is not None:
@@ -100,8 +100,8 @@ class Track:
             )
         else:
             self.ytid = None
-        self.length: Optional[int] = info.get("length")
-        self.duration: Optional[int] = self.length  # mypy does not infer this one
+        self.length = info.get("length")
+        self.duration = self.length  # mypy does not infer this one
         self.uri = info.get("uri")
         self.author = info.get("author")
 
@@ -109,17 +109,15 @@ class Track:
         self.dead = False
 
         if self.ytid:
-            self.thumb: Optional[str] = (
-                f"https://img.youtube.com/vi/{self.ytid}/maxresdefault.jpg"
-            )
+            self.thumb = f"https://img.youtube.com/vi/{self.ytid}/maxresdefault.jpg"
         else:
             self.thumb = None
 
-    def __str__(self) -> str:
+    def __str__(self):
         return self.title
 
     @property
-    def is_dead(self) -> bool:
+    def is_dead(self):
         return self.dead
 
 
@@ -134,7 +132,7 @@ class TrackPlaylist:
         A list of individual :class:`Track` objects from the playlist.
     """
 
-    def __init__(self, data: Dict[str, Any]):
+    def __init__(self, data):
         self.data = data
         self.tracks = [
             Track(id_=track["track"], info=track["info"]) for track in data["tracks"]
@@ -159,55 +157,51 @@ class Player:
     """
 
     def __init__(
-        self,
-        bot: Union[commands.Bot[Any], commands.AutoShardedBot[Any]],
-        guild_id: int,
-        node: Node,
-        **kwargs: str,
+        self, bot, guild_id, node, **kwargs,
     ):
         self.bot = bot
         self.guild_id = guild_id
         self.node = node
 
-        self.last_update: Optional[float] = None
-        self.last_position: Optional[int] = None
-        self.position_timestamp: Optional[int] = None
+        self.last_update = None
+        self.last_position = None
+        self.position_timestamp = None
 
-        self._voice_state: Dict[str, Dict[str, Any]] = {}
+        self._voice_state = {}
 
         self.volume = 100
         self.paused = False
-        self.current: Optional[Track] = None
+        self.current = None
         self._equalizer = Equalizer.flat()
-        self.channel_id: Optional[int] = None
+        self.channel_id = None
 
     @property
-    def equalizer(self) -> Equalizer:
+    def equalizer(self):
         """The currently applied Equalizer."""
         return self._equalizer
 
     @property
-    def eq(self) -> Equalizer:
+    def eq(self):
         """Alias to :func:`equalizer`."""
         return self.equalizer
 
     @property
-    def is_connected(self) -> bool:
+    def is_connected(self):
         """Returns whether the player is connected to a voicechannel or not."""
         return self.channel_id is not None
 
     @property
-    def is_playing(self) -> bool:
+    def is_playing(self):
         """Returns whether or not the player is currently playing."""
         return self.is_connected and self.current is not None
 
     @property
-    def is_paused(self) -> bool:
+    def is_paused(self):
         """Returns whether or not the player is paused."""
         return self.paused
 
     @property
-    def position(self) -> Union[int, float]:
+    def position(self):
         if (
             not self.is_playing
             or not self.last_position
@@ -233,19 +227,19 @@ class Player:
 
         return min(position, self.current.duration)
 
-    async def update_state(self, raw_state: Dict[str, Dict[str, int]]) -> None:
+    async def update_state(self, raw_state):
         state = raw_state["state"]
 
         self.last_update = time.time() * 1000
         self.last_position = state.get("position", 0)
         self.position_timestamp = state.get("time", 0)
 
-    async def _voice_server_update(self, data: Dict[str, Any]) -> None:
+    async def _voice_server_update(self, data):
         self._voice_state.update({"event": data})
 
         await self._dispatch_voice_update()
 
-    async def _voice_state_update(self, data: Dict[str, Any]) -> None:
+    async def _voice_state_update(self, data):
         self._voice_state.update({"sessionId": data["session_id"]})
 
         channel_id = data["channel_id"]
@@ -257,20 +251,18 @@ class Player:
         self.channel_id = int(channel_id)
         await self._dispatch_voice_update()
 
-    async def _dispatch_voice_update(self) -> None:
+    async def _dispatch_voice_update(self):
         __log__.debug(f"PLAYER | Dispatching voice update:: {self.channel_id}")
         if {"sessionId", "event"} == self._voice_state.keys():
             await self.node._send(
                 op="voiceUpdate", guildId=str(self.guild_id), **self._voice_state
             )
 
-    async def hook(
-        self, event: Union[TrackEnd, TrackException, TrackStuck, WebsocketClosed]
-    ) -> None:
+    async def hook(self, event):
         if isinstance(event, (TrackEnd, TrackException, TrackStuck)):
             self.current = None
 
-    def _get_shard_socket(self, shard_id: int) -> Optional[DiscordWebSocket]:
+    def _get_shard_socket(self, shard_id):
         if isinstance(self.bot, commands.AutoShardedBot):
             return self.bot.shards[shard_id].ws  # type: ignore
             # not part of the discord.py public API, see #1497
@@ -280,7 +272,7 @@ class Player:
 
         return None
 
-    async def connect(self, channel_id: int) -> None:
+    async def connect(self, channel_id):
         """|coro|
 
         Connect to a Discord Voice Channel.
@@ -305,7 +297,7 @@ class Player:
         await shard_socket.voice_state(self.guild_id, channel_id)
         __log__.info(f"PLAYER | Connected to voice channel:: {self.channel_id}")
 
-    async def disconnect(self) -> None:
+    async def disconnect(self):
         """|coro|
 
         Disconnect from a Discord Voice Channel.
@@ -325,9 +317,7 @@ class Player:
 
         await shard_socket.voice_state(self.guild_id, None)
 
-    async def play(
-        self, track: Track, *, replace: bool = True, start: int = 0, end: int = 0
-    ) -> None:
+    async def play(self, track, *, replace=True, start=0, end=0):
         """|coro|
 
         Play a WaveLink Track.
@@ -356,7 +346,7 @@ class Player:
 
         self.current = track
 
-        payload: Dict[str, Union[str, bool]] = {
+        payload = {
             "op": "play",
             "guildId": str(self.guild_id),
             "track": track.id,
@@ -372,7 +362,7 @@ class Player:
             f"PLAYER | Started playing track:: {str(track)} ({self.channel_id})"
         )
 
-    async def stop(self) -> None:
+    async def stop(self):
         """|coro|
 
         Stop the Player's currently playing song.
@@ -383,7 +373,7 @@ class Player:
         )
         self.current = None
 
-    async def destroy(self) -> None:
+    async def destroy(self):
         """|coro|
 
         Stop the player, and remove any internal references to it.
@@ -394,7 +384,7 @@ class Player:
         await self.node._send(op="destroy", guildId=str(self.guild_id))
         del self.node.players[self.guild_id]
 
-    async def set_eq(self, equalizer: Equalizer) -> None:
+    async def set_eq(self, equalizer):
         """|coro|
 
         Set the Players Equalizer.
@@ -412,14 +402,14 @@ class Player:
         )
         self._equalizer = equalizer
 
-    async def set_equalizer(self, equalizer: Equalizer) -> None:
+    async def set_equalizer(self, equalizer):
         """|coro|
 
         An alias to :func:`set_eq`.
         """
         await self.set_eq(equalizer)
 
-    async def set_pause(self, pause: bool) -> None:
+    async def set_pause(self, pause):
         """|coro|
 
         Set the players paused state.
@@ -433,7 +423,7 @@ class Player:
         self.paused = pause
         __log__.debug(f"PLAYER | Set pause:: {self.paused} ({self.channel_id})")
 
-    async def set_volume(self, vol: int) -> None:
+    async def set_volume(self, vol):
         """|coro|
 
         Set the player's volume, between 0 and 1000.
@@ -449,7 +439,7 @@ class Player:
         )
         __log__.debug(f"PLAYER | Set volume:: {self.volume} ({self.channel_id})")
 
-    async def seek(self, position: int = 0) -> None:
+    async def seek(self, position=0):
         """Seek to the given position in the song.
 
         Parameters
@@ -460,7 +450,7 @@ class Player:
 
         await self.node._send(op="seek", guildId=str(self.guild_id), position=position)
 
-    async def change_node(self, identifier: Optional[str] = None) -> None:
+    async def change_node(self, identifier=None):
         """|coro|
 
         Change the players current :class:`wavelink.node.Node`. Useful when a Node fails or when changing regions.

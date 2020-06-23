@@ -42,12 +42,12 @@ class TrackEnd:
 
     __slots__ = ("track", "player", "reason")
 
-    def __init__(self, data: Dict[str, Any]):
+    def __init__(self, data):
         self.track = data.get("track")
         self.player = data.get("player")
         self.reason = data.get("reason")
 
-    def __str__(self) -> str:
+    def __str__(self):
         return "TrackEndEvent"
 
 
@@ -66,12 +66,12 @@ class TrackException:
 
     __slots__ = ("track", "player", "error")
 
-    def __init__(self, data: Dict[str, Any]):
+    def __init__(self, data):
         self.track = data.get("track")
         self.player = data.get("player")
         self.error = data.get("error")
 
-    def __str__(self) -> str:
+    def __str__(self):
         return "TrackExceptionEvent"
 
 
@@ -90,13 +90,13 @@ class TrackStuck:
 
     __slots__ = ("track", "player", "threshold")
 
-    def __init__(self, data: Dict[str, Any]) -> None:
+    def __init__(self, data):
         self.track = data.get("track")
         self.player = data.get("player")
-        threshold: str = data.get("thresholdMs", 0)
+        threshold = data.get("thresholdMs", 0)
         self.threshold = int(threshold)
 
-    def __str__(self) -> str:
+    def __str__(self):
         return "TrackStuckEvent"
 
 
@@ -113,11 +113,11 @@ class TrackStart:
 
     __slots__ = ("track", "player")
 
-    def __init__(self, data: Dict[str, Any]) -> None:
+    def __init__(self, data):
         self.track = data.get("track")
         self.player = data.get("player")
 
-    def __str__(self) -> str:
+    def __str__(self):
         return "TrackStartEvent"
 
 
@@ -138,11 +138,11 @@ class WebsocketClosed:
 
     __slots__ = ("player", "reason", "code", "guild_id")
 
-    def __init__(self, data: Dict[str, Any]) -> None:
+    def __init__(self, data):
         self.player = data.get("player")
         self.reason = data.get("reason")
         self.code = data.get("code")
         self.guild_id = data.get("guildID")
 
-    def __str__(self) -> str:
+    def __str__(self):
         return "WebsocketClosedEvent"

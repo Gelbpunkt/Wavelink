@@ -60,20 +60,20 @@ class Node:
 
     def __init__(
         self,
-        host: str,
-        port: int,
-        shards: int,
-        user_id: int,
+        host,
+        port,
+        shards,
+        user_id,
         *,
-        client: Client,
-        session: aiohttp.ClientSession,
-        rest_uri: str,
-        password: str,
-        region: str,
-        identifier: str,
-        shard_id: Optional[int] = None,
-        secure: bool = False,
-        heartbeat: Optional[float] = None,
+        client,
+        session,
+        rest_uri,
+        password,
+        region,
+        identifier,
+        shard_id=None,
+        secure=False,
+        heartbeat=None,
     ):
         self.host = host
         self.port = port
@@ -88,35 +88,23 @@ class Node:
 
         self.shard_id = shard_id
 
-        self.players: Dict[int, Player] = {}
+        self.players = {}
 
         self.session = session
-        self._websocket: Optional[WebSocket] = None
+        self._websocket = None
         self._client = client
 
-        self.hook: Optional[
-            Callable[
-                [
-                    Union[
-                        TrackEnd,
-                        TrackStart,
-                        TrackStuck,
-                        TrackException,
-                        WebsocketClosed,
-                    ]
-                ],
-                Any,
-            ]
-        ] = None
+        self.hook = None
+
         self.available = True
 
-        self.stats: Optional[Stats] = None
+        self.stats = None
 
-    def __repr__(self) -> str:
+    def __repr__(self):
         return f"{self.identifier} | {self.region} | (Shard: {self.shard_id})"
 
     @property
-    def is_available(self) -> bool:
+    def is_available(self):
         """Return whether the Node is available or not."""
         return (
             self._websocket is not None
@@ -124,22 +112,22 @@ class Node:
             and self.available
         )
 
-    def close(self) -> None:
+    def close(self):
         """Close the node and make it unavailable."""
         self.available = False
 
-    def open(self) -> None:
+    def open(self):
         """Open the node and make it available."""
         self.available = True
 
     @property
-    def penalty(self) -> float:
+    def penalty(self):
         """Returns the load-balancing penalty for this node."""
         if not self.available or not self.stats:
             return 9e30
         return self.stats.penalty.total
 
-    async def connect(self) -> None:
+    async def connect(self):
         self._websocket = WebSocket(
             node=self,
             host=self.host,
@@ -153,7 +141,7 @@ class Node:
 
         __log__.info(f"NODE | {self.identifier} connected:: {self.__repr__()}")
 
-    async def get_tracks(self, query: str) -> Union[List[Track], TrackPlaylist, None]:
+    async def get_tracks(self, query):
         """|coro|
 
         Search for and return a list of Tracks for the given query.
@@ -194,7 +182,7 @@ class Node:
 
             return tracks
 
-    async def build_track(self, identifier: str) -> Track:
+    async def build_track(self, identifier):
         """|coro|
 
         Build a track object with a valid track identifier.
@@ -229,7 +217,7 @@ class Node:
             track = Track(id_=identifier, info=data)
             return track
 
-    def get_player(self, guild_id: int) -> Optional[Player]:
+    def get_player(self, guild_id):
         """Retrieve a player object associated with the Node.
 
         Parameters
@@ -244,9 +232,8 @@ class Node:
         return self.players.get(guild_id, None)
 
     async def on_event(
-        self,
-        event: Union[TrackEnd, TrackStart, TrackStuck, TrackException, WebsocketClosed],
-    ) -> None:
+        self, event,
+    ):
         """Function which dispatches events when triggered on the Node."""
         __log__.info(f"NODE | Event dispatched:: <{str(event)}> ({self.__repr__()})")
         if event.player:
@@ -261,12 +248,8 @@ class Node:
             self.hook(event)
 
     def set_hook(
-        self,
-        func: Callable[
-            [Union[TrackStart, TrackEnd, TrackStuck, TrackException, WebsocketClosed]],
-            Any,
-        ],
-    ) -> None:
+        self, func,
+    ):
         """Set the Node Event Hook.
 
         The event hook will be dispatched when an Event occurs.
@@ -282,7 +265,7 @@ class Node:
 
         self.hook = func
 
-    async def destroy(self) -> None:
+    async def destroy(self):
         """Destroy the node and all it's players."""
         players = self.players.copy()
 
@@ -297,7 +280,7 @@ class Node:
 
         del self._client.nodes[self.identifier]
 
-    async def _send(self, **data: Any) -> None:
+    async def _send(self, **data):
         __log__.debug(f"NODE | Sending payload:: <{data}> ({self.__repr__()})")
         if self._websocket:
             await self._websocket._send(**data)

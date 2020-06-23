@@ -41,13 +41,13 @@ class Equalizer:
         A list of tuple pairs containing a band int and gain float.
     """
 
-    def __init__(self, levels: List[Tuple[int, float]]):
+    def __init__(self, levels):
         self.raw = levels
         self.eq = self._factory(levels)
 
     @staticmethod
-    def _factory(levels: List[Tuple[int, float]]) -> List[Dict[str, Union[int, float]]]:
-        _band_dict: DefaultDict[int, float] = collections.defaultdict(int)
+    def _factory(levels):
+        _band_dict = collections.defaultdict(int)
 
         _band_dict.update(levels)
         _dict = [{"band": i, "gain": _band_dict[i]} for i in range(15)]
@@ -55,7 +55,7 @@ class Equalizer:
         return _dict
 
     @classmethod
-    def build(cls, *, levels: List[Tuple[int, float]]) -> Equalizer:
+    def build(cls, *, levels):
         """Build a custom Equalizer class with the provided levels.
 
         Parameters
@@ -69,7 +69,7 @@ class Equalizer:
         return self
 
     @classmethod
-    def flat(cls) -> Equalizer:
+    def flat(cls):
         """Flat Equalizer.
 
         Resets your EQ to Flat.
@@ -97,7 +97,7 @@ class Equalizer:
         return self
 
     @classmethod
-    def boost(cls) -> Equalizer:
+    def boost(cls):
         """Boost Equalizer.
 
         This equalizer emphasizes Punchy Bass and Crisp Mid-High tones.
@@ -127,7 +127,7 @@ class Equalizer:
         return self
 
     @classmethod
-    def metal(cls) -> Equalizer:
+    def metal(cls):
         """Experimental Metal/Rock Equalizer.
 
         Expect clipping on Bassy songs.
@@ -156,7 +156,7 @@ class Equalizer:
         return self
 
     @classmethod
-    def piano(cls) -> Equalizer:
+    def piano(cls):
         """Piano Equalizer.
 
         Suitable for Piano tracks, or tacks with an emphasis on Female Vocals.

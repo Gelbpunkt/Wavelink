@@ -32,8 +32,8 @@ class WavelinkMixin:
             bot.add_cog(MusicCog())
     """
 
-    def __new__(cls, *args: Any, **kwargs: Any) -> Cog[Any]:  # type: ignore
-        listeners: Dict[Callable[[Any], Any], List[str]] = {}
+    def __new__(cls, *args, **kwargs):  # type: ignore
+        listeners = {}
 
         for name, element in inspect.getmembers(cls):
             try:
@@ -52,9 +52,7 @@ class WavelinkMixin:
 
         return self  # type: ignore
 
-    async def on_wavelink_error(
-        self, listener: Callable[[Any], Any], error: Exception
-    ) -> None:
+    async def on_wavelink_error(self, listener, error):
         """Event dispatched when an error is raised during mixin listener dispatch.
 
         Parameters
@@ -69,7 +67,7 @@ class WavelinkMixin:
             type(error), error, error.__traceback__, file=sys.stderr
         )
 
-    async def on_node_ready(self, node: Node) -> None:
+    async def on_node_ready(self, node):
         """Listener dispatched when a :class:`wavelink.node.Node` is connected and ready.
 
         Parameters
@@ -78,7 +76,7 @@ class WavelinkMixin:
             The node associated with the listener event.
         """
 
-    async def on_track_start(self, node: Node, payload: TrackStart) -> None:
+    async def on_track_start(self, node, payload):
         """Listener dispatched when a track starts.
 
         Parameters
@@ -89,7 +87,7 @@ class WavelinkMixin:
             The :class:`wavelink.events.TrackStart` payload.
         """
 
-    async def on_track_end(self, node: Node, payload: TrackEnd) -> None:
+    async def on_track_end(self, node, payload):
         """Listener dispatched when a track ends.
 
         Parameters
@@ -100,7 +98,7 @@ class WavelinkMixin:
             The :class:`wavelink.events.TrackEnd` payload.
         """
 
-    async def on_track_stuck(self, node: Node, payload: TrackStuck) -> None:
+    async def on_track_stuck(self, node, payload):
         """Listener dispatched when a track is stuck.
 
         Parameters
@@ -111,7 +109,7 @@ class WavelinkMixin:
             The :class:`wavelink.events.TrackStuck` payload.
         """
 
-    async def on_track_exception(self, node: Node, payload: TrackException) -> None:
+    async def on_track_exception(self, node, payload):
         """Listener dispatched when a track errors.
 
         Parameters
@@ -122,7 +120,7 @@ class WavelinkMixin:
             The :class:`wavelink.events.TrackException` payload.
         """
 
-    async def on_websocket_closed(self, node: Node, payload: WebsocketClosed) -> None:
+    async def on_websocket_closed(self, node, payload):
         """Listener dispatched when a node websocket is closed by lavalink.
 
         Parameters
@@ -134,9 +132,7 @@ class WavelinkMixin:
         """
 
     @staticmethod
-    def listener(
-        event: Optional[str] = None,
-    ) -> Callable[[Callable[[Any], Any]], Callable[[Any], Any]]:
+    def listener(event=None,):
         """Decorator that adds a coroutine as a Wavelink event listener.
 
         .. note::
@@ -161,7 +157,7 @@ class WavelinkMixin:
             Listener is not a coroutine.
         """
 
-        def wrapper(func: Callable[[Any], Any]) -> Callable[[Any], Any]:
+        def wrapper(func):
             if not inspect.iscoroutinefunction(func):
                 raise TypeError("Wavelink listeners must be coroutines.")
 

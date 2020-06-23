@@ -38,23 +38,23 @@ __log__ = logging.getLogger(__name__)
 
 
 class WebSocket:
-    def __init__(self, **attrs: Any) -> None:
-        self._node: Node = attrs["node"]
+    def __init__(self, **attrs):
+        self._node = attrs["node"]
         self.client = self._node._client
         self.bot = self.client.bot
         self.host = attrs.get("host")
         self.port = attrs.get("port")
-        self.password: str = attrs["password"]
+        self.password = attrs["password"]
         self.shard_count = attrs.get("shard_count")
         self.user_id = attrs.get("user_id")
         self.secure = attrs.get("secure")
 
-        self._websocket: Optional[aiohttp.ClientWebSocketResponse] = None
-        self._last_exc: Optional[Exception] = None
-        self._task: Optional[asyncio.Task[None]] = None
+        self._websocket = None
+        self._last_exc = None
+        self._task = None
 
     @property
-    def headers(self) -> Dict[str, str]:
+    def headers(self):
         return {
             "Authorization": self.password,
             "Num-Shards": str(self.shard_count),
@@ -62,10 +62,10 @@ class WebSocket:
         }
 
     @property
-    def is_connected(self) -> bool:
+    def is_connected(self):
         return self._websocket is not None and not self._websocket.closed
 
-    async def _connect(self) -> None:
+    async def _connect(self):
         await self.bot.wait_until_ready()
 
         try:
@@ -114,7 +114,7 @@ class WebSocket:
                 "WEBSOCKET | Connection established...%s", self._node.__repr__()
             )
 
-    async def _listen(self) -> None:
+    async def _listen(self):
         backoff = ExponentialBackoff(base=7)
         if self._websocket is None:
             raise RuntimeError("Should not start listening before connecting")
@@ -140,7 +140,7 @@ class WebSocket:
                 __log__.debug(f"WEBSOCKET | Received Payload:: <{msg.data}>")
                 self.bot.loop.create_task(self.process_data(msg.json()))
 
-    async def process_data(self, data: Dict[str, Any]) -> None:
+    async def process_data(self, data):
         op = data.get("op", None)
         if not op:
             return
@@ -173,11 +173,8 @@ class WebSocket:
             except KeyError:
                 pass
 
-    def _get_event_payload(
-        self, name: str, data: Dict[str, Any]
-    ) -> Tuple[
-        str, Union[TrackEnd, TrackStart, TrackException, TrackStuck, WebsocketClosed]
-    ]:
+    def _get_event_payload(self, name, data):
+
         if name == "TrackEndEvent":
             return "on_track_end", TrackEnd(data)
         elif name == "TrackStartEvent":
@@ -189,7 +186,7 @@ class WebSocket:
         else:
             return "on_websocket_closed", WebsocketClosed(data)
 
-    async def _send(self, **data: Dict[str, Any]) -> None:
+    async def _send(self, **data):
         if self.is_connected and self._websocket:
             __log__.debug(f"WEBSOCKET | Sending Payload:: {data}")
             await self._websocket.send_json(data)

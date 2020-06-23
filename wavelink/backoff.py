@@ -43,7 +43,7 @@ class ExponentialBackoff:
         number in between may be returned.
     """
 
-    def __init__(self, base: int = 1, *, integral: bool = False):
+    def __init__(self, base=1, *, integral=False):
         self._base = base
 
         self._exp = 0
@@ -62,7 +62,7 @@ class ExponentialBackoff:
         else:
             self._randfunc = rand.uniform  # type:ignore
 
-    def delay(self) -> float:
+    def delay(self):
         """Compute the next delay
         Returns the next delay to wait according to the exponential
         backoff algorithm.  This is a value between 0 and base * 2^exp
