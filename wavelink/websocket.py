@@ -84,7 +84,7 @@ class WebSocket:
                 isinstance(error, aiohttp.WSServerHandshakeError)
                 and error.status == 401
             ):
-                print(
+                __log__.error(
                     f"\nAuthorization Failed for Node:: {self._node}\n", file=sys.stderr
                 )
             else:
