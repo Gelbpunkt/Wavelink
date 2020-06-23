@@ -23,16 +23,10 @@ SOFTWARE.
 import inspect
 import logging
 
-from typing import Any, Callable, Dict, List, Optional, Union
 from urllib.parse import quote
 
-import aiohttp
-
-from .client import Client
 from .errors import *
-from .events import TrackEnd, TrackException, TrackStart, TrackStuck, WebsocketClosed
-from .player import Player, Track, TrackPlaylist
-from .stats import Stats
+from .player import Track, TrackPlaylist
 from .websocket import WebSocket
 
 __log__ = logging.getLogger(__name__)

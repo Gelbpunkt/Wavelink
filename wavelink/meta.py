@@ -2,13 +2,6 @@ import inspect
 import sys
 import traceback
 
-from typing import Any, Callable, Dict, List, Optional
-
-from discord.ext.commands import Cog
-
-from .events import *
-from .node import Node
-
 
 class WavelinkMixin:
     """Wavelink Mixin class.

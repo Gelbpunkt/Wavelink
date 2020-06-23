@@ -24,15 +24,11 @@ import logging
 import re
 import time
 
-from typing import Any, Dict, Optional, Union
-
 from discord.ext import commands
-from discord.gateway import DiscordWebSocket
 
 from .eqs import *
 from .errors import *
 from .events import *
-from .node import Node
 
 __all__ = ("Track", "TrackPlaylist", "Player")
 __log__ = logging.getLogger(__name__)

@@ -24,8 +24,6 @@ from __future__ import annotations
 
 import collections
 
-from typing import DefaultDict, Dict, List, Tuple, Union
-
 
 class Equalizer:
     """Class representing a usuable equalizer.

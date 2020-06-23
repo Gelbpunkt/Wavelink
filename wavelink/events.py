@@ -22,8 +22,6 @@ SOFTWARE.
 """
 from __future__ import annotations
 
-from typing import Any, Dict
-
 __all__ = ("TrackEnd", "TrackException", "TrackStuck", "TrackStart", "WebsocketClosed")
 
 

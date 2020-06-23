@@ -25,13 +25,10 @@ import logging
 import sys
 import traceback
 
-from typing import Any, Dict, Optional, Tuple, Union
-
 import aiohttp
 
 from .backoff import ExponentialBackoff
 from .events import *
-from .node import Node
 from .stats import Stats
 
 __log__ = logging.getLogger(__name__)

@@ -24,7 +24,6 @@ import asyncio
 import logging
 
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Union
 
 import aiohttp
 
@@ -32,7 +31,7 @@ from discord.ext import commands
 
 from .errors import *
 from .node import Node
-from .player import Player, Track, TrackPlaylist
+from .player import Player
 
 __log__ = logging.getLogger(__name__)
 

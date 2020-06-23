@@ -21,10 +21,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE."""
 from __future__ import annotations
 
-from typing import Any, Dict, Union
-
-from .node import Node
-
 
 class Penalty:
     def __init__(self, stats):
