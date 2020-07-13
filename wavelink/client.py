@@ -115,7 +115,7 @@ class Client:
         futures = []
 
         for cog in self.bot.cogs.values():
-            listeners = getattr(cog, "__wavelink_listeners__")
+            listeners = getattr(cog, "__wavelink_listeners__", None)
             if not listeners:
                 continue
             try:
