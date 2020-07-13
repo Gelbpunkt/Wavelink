@@ -21,6 +21,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 import asyncio
+import json
 import logging
 import sys
 import traceback
@@ -186,4 +187,4 @@ class WebSocket:
     async def _send(self, **data):
         if self.is_connected and self._websocket:
             __log__.debug(f"WEBSOCKET | Sending Payload:: {data}")
-            await self._websocket.send_json(data)
+            await self._websocket.send_str(json.dumps(data).decode())
