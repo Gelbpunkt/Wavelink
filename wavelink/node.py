@@ -152,29 +152,39 @@ class Node:
             A list of or TrackPlaylist instance of :class:`wavelink.player.Track` objects.
             This could be None if no tracks were found.
         """
-        async with self.session.get(
-            f"{self.rest_uri}/loadtracks?identifier={quote(query)}",
-            headers={"Authorization": self.password},
-        ) as resp:
-            data = await resp.json()
+        retries = 5
 
-            if not data["tracks"]:
-                __log__.info(f"REST | No tracks with query:: <{query}> found.")
-                return None
+        while retries > 0:
+            async with self.session.get(
+                f"{self.rest_uri}/loadtracks?identifier={quote(query)}",
+                headers={"Authorization": self.password},
+            ) as resp:
+                data = await resp.json()
 
-            if data["playlistInfo"]:
-                return TrackPlaylist(data=data)
+            if resp.status != 200:
+                retries -= 1
+            else:
+                break
 
-            tracks = []
-            for track in data["tracks"]:
-                tracks.append(Track(id_=track["track"], info=track["info"]))
+            await asyncio.sleep(0.2)
 
-            __log__.debug(
-                f"REST | Found <{len(tracks)}> tracks with query:: <{query}>"
-                f" ({self.__repr__()})"
-            )
+        if retries == 0 or not data.get("tracks", None):
+            __log__.info(f"REST | No tracks with query:: <{query}> found.")
+            return None
 
-            return tracks
+        if data["playlistInfo"]:
+            return TrackPlaylist(data=data)
+
+        tracks = []
+        for track in data["tracks"]:
+            tracks.append(Track(id_=track["track"], info=track["info"]))
+
+        __log__.debug(
+            f"REST | Found <{len(tracks)}> tracks with query:: <{query}>"
+            f" ({self.__repr__()})"
+        )
+
+        return tracks
 
     async def build_track(self, identifier):
         """|coro|
@@ -197,8 +207,9 @@ class Node:
             Decoding and building the track failed.
         """
         async with self.session.get(
-            f"{self.rest_uri}/decodetrack?track={identifier}",
+            f"{self.rest_uri}/decodetrack",
             headers={"Authorization": self.password},
+            params={"track": identifier},
         ) as resp:
             data = await resp.json()
 

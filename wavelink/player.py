@@ -260,7 +260,7 @@ class Player:
 
     def _get_shard_socket(self, shard_id):
         if isinstance(self.bot, commands.AutoShardedBot):
-            return self.bot.shards[shard_id].ws  # type: ignore
+            return self.bot.shards[shard_id]._parent.ws  # type: ignore
             # not part of the discord.py public API, see #1497
 
         if self.bot.shard_id is None or self.bot.shard_id == shard_id:
