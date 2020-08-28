@@ -187,4 +187,4 @@ class WebSocket:
     async def _send(self, **data):
         if self.is_connected and self._websocket:
             __log__.debug(f"WEBSOCKET | Sending Payload:: {data}")
-            await self._websocket.send_str(json.dumps(data).decode())
+            await self._websocket.send_json(data)
